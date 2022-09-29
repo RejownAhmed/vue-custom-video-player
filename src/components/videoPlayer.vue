@@ -32,7 +32,7 @@
   /**
    * Show Video Controls
   */
-  const showControls = ref(true)
+  const videoControls = ref(true)
   /**
    * Initial Volume
   */
@@ -92,11 +92,11 @@
   /**
    * Show/Hide Video Controls
   */
-  function mouseEntered() {
-    showControls.value = true
+  function showControls() {
+    videoControls.value = true
   }
-  function mouseLeft() {
-    playing.value ? showControls.value = false : showControls.value = true
+  function hideControls() {
+    playing.value ? videoControls.value = false : videoControls.value = true
   }
   /**
    * Video Loaded in the DOM
@@ -120,19 +120,17 @@
     if(videoEl.value.paused) {
       videoEl.value.play()
       playing.value = true
-      showControls.value = false
+      hideControls()
       return
     } else{
       videoEl.value.pause()
       playing.value = false
-      showControls.value = true
+      showControls()
       return
     }
   }
   const loadSubtitle = ()=>{
     captionText.value = videoEl.value.textTracks[0].activeCues[0].text
-    
-
   }
   /**
    * Check if the volume is set already from localstorage
@@ -153,7 +151,7 @@
     } //If muted mute the video
   })
   // Gets a varibale and watches for changes 
-    watch(volume, (newVolume, prevVolume)=>{//set volume
+  watch(volume, (newVolume, prevVolume)=>{//set volume
     videoEl.value.volume = newVolume 
     if( volume.value > 0 ) {//if user changes volume after muting unmute the video and set new volume
         muted.value = false
@@ -227,7 +225,8 @@
   })
   const setProgress = ()=>{
     currentTime.value = formatDuration(videoEl.value.currentTime)
-    const percent = videoEl.value.currentTime / videoEl.value.duration
+    const duration = videoEl.value.duration
+    const percent = videoEl.value.currentTime / duration
     /**
     * Below codes shows how we can update the progress bar position
     * Via the exposed template ref "ProgressPosition"
@@ -235,11 +234,19 @@
     * See {@link customRange}
     */
     progressSlider.value.progressPosition = percent
+
+    if (duration > 0) {
+      for (let i = 0; i < videoEl.value.buffered.length; i++) {
+        if (
+          videoEl.value.buffered.start(videoEl.value.buffered.length - 1 - i) < videoEl.value.currentTime
+        ) {
+            progressSlider.value.bufferPosition = (videoEl.value.buffered.end(videoEl.value.buffered.length - 1 - i)) / duration
+          break;
+        }
+      }
+    }
     
   }
-
-
-
   /**
    * Skip to a certain position
   */
@@ -389,16 +396,17 @@
   <div class="video-container" 
     :class="toggleClass"
     :ref="(e)=> videoContainer = e"
-    :onmouseover="mouseEntered"
-    :onmouseout="mouseLeft">
+    :onmouseover="showControls"
+    :onmouseout="hideControls">
     <div class="video-bottom-section">
       <div class="caption-container" v-show="showCaption">
         <div :ref="e => captionContainer = e">{{captionText}}</div>
       </div>
-      <div class="video-controls-container" v-show="showControls">
+      <div class="video-controls-container" v-show="videoControls">
           <custom-range 
             v-model="videoProgress" 
             expand-on-hover
+            show-buffer
             :ref="(e)=> progressSlider = e"
           >
             <img class="preview-img">
