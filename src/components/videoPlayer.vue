@@ -44,11 +44,11 @@
   /**
    * Video Duration
   */
-  const duration = ref('0:00:00')
+  const duration = ref('0:00')
   /**
    * currentTime ontimeupdate of the file
   */
-  const currentTime = ref('0:00:00')
+  const currentTime = ref('0:00')
   /**
    * Video Caption
   */
@@ -257,7 +257,6 @@
             videoEl.value.currentTime = videoEl.value.duration - 1
         } else if(newPosition <= 0){
             videoEl.value.currentTime = 0
-            volume.value = 0.1
         } else {
             videoEl.value.currentTime = newPosition
         }
@@ -495,7 +494,7 @@
   </div>
 </template>
 
-<style>
+<style scoped>
   /** 
     * Hide all controls
   */

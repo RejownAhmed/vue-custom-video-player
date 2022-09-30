@@ -159,7 +159,6 @@
             --hover-range-height: 100%;
         }
         height: var(--range-container-height);
-        margin-inline: .5rem;
         cursor: pointer;
         display: flex;
         align-items: center;
