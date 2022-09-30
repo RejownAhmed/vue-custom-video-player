@@ -73,7 +73,7 @@
    * Show/Hide Video Controls
   */
   const hideControls = ()=>{
-    // videoControls.value = false
+    videoControls.value = false
   }
   let timer, idleTime;
   function resetTimer() {
@@ -102,7 +102,7 @@
 
   function startIdleTimer() {
     idleTime++
-    // if(idleTime >= 5) videoControls.value = false
+    if(idleTime >= 5) videoControls.value = false
   }
   /**
    * Video Loaded in the DOM
