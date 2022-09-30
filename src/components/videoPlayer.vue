@@ -602,18 +602,19 @@
   }
   .video-controls-container {
     color: white;
+    padding: 0px 10px;
   }
 
   .video-controls-container::before {
     content: "";
     position: absolute;
     bottom: 0;
+    left: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, .75), transparent);
     width: 100%;
     aspect-ratio: 6 / 1;
     z-index: -1;
     pointer-events: none;
-    padding: 0px 5px;
   }
   .video-controls-container .controls {
     display: flex;

@@ -73,7 +73,7 @@
    * Show/Hide Video Controls
   */
   const hideControls = ()=>{
-    videoControls.value = false
+    // videoControls.value = false
   }
   let timer, idleTime;
   function resetTimer() {
@@ -102,7 +102,7 @@
 
   function startIdleTimer() {
     idleTime++
-    if(idleTime >= 5) videoControls.value = false
+    // if(idleTime >= 5) videoControls.value = false
   }
   /**
    * Video Loaded in the DOM
@@ -274,50 +274,52 @@
         >
         </custom-range>
       </div>
-      <div class="video-center-section" v-show="videoControls">
-            <div class="top">
-                <div></div>
-                <div class="controls">
-                    <button 
-                        @click="showCaption = !showCaption" 
-                        class="captions-btn"
-                        :style="showCaption ? {borderBottom:' 3px solid red'} : ''">
-                        <svg viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z" />
-                        </svg>   
-                    </button>
-                    <button class="speed-btn wide-btn" @click="changePlaybackSpeed">
-                        {{playbackspeed}}x
-                    </button>
-                </div>
+      <div class="video-controls-container" v-show="videoControls">
+            <div class="controls">
+              <div class="top">
+                  <div class="left"></div>
+                  <div class="right">
+                      <button
+                          @click="showCaption = !showCaption"
+                          class="captions-btn"
+                          :style="showCaption ? {borderBottom:' 3px solid red'} : ''">
+                          <svg viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z" />
+                          </svg>
+                      </button>
+                      <button class="speed-btn wide-btn" @click="changePlaybackSpeed">
+                          {{playbackspeed}}x
+                      </button>
+                  </div>
+              </div>
+              <div class="middle">
+                  <button class="play-pause-btn" @click="togglePlay">
+                      <svg v-if="!playing" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                      </svg>
+                      <svg v-if="playing" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                      </svg>
+                  </button>
+              </div>
+              <div class="bottom">
+                  <div class="duration-container">
+                      <span>{{currentTime}}</span>
+                      /
+                      <span>{{duration}}</span>
+                  </div>
+                  <div>
+                      <button class="fullscreen-btn" @click="toggleFullScreenMode">
+                          <svg v-if="!fullscreen" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                          </svg>
+                          <svg v-if="fullscreen" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                          </svg>
+                      </button>
+                  </div>
+              </div>
             </div>
-            <div class="middle">
-                <button class="play-pause-btn" @click="togglePlay">
-                    <svg v-if="!playing" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-                    </svg>
-                    <svg v-if="playing" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
-                    </svg>
-                </button>
-            </div>
-        <div class="bottom">
-            <div class="duration-container">
-                <span>{{currentTime}}</span>
-                /
-                <span>{{duration}}</span>
-            </div>
-            <div>
-                <button class="fullscreen-btn" @click="toggleFullScreenMode">
-                    <svg v-if="!fullscreen" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-                    </svg>
-                    <svg v-if="fullscreen" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
   
       </div>
       <h1 class="loader" v-if="loading">Loading....</h1>
@@ -366,6 +368,7 @@
       justify-content: center;
       margin-inline: auto;
       background-color: black;
+      overflow: hidden;
     }
   
     .mini-video-container.theater,
@@ -410,7 +413,7 @@
         display: inline-block;
         text-align: center;
     }
-    .video-center-section{
+    .video-controls-container{
         position: absolute;
         top: 0;
         left: 0;
@@ -419,38 +422,42 @@
         width: 100%;
         color: #fff;
         background-color: rgba(0,0,0,0.3);
+        padding: 0px 10px;
+        box-sizing: border-box;
+        display: block;
+    }
+    .controls{
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      height: 100%;
     }
     .top{
-        position: absolute;
-        top: 0;
-        left: 0;
         width: 100%;
-        height: 30px;
         display: flex;
         justify-content: space-between;
         align-content: flex-start;
     }
+    .top .left, .top .right{
+      display: inline-flex;
+    }
     .middle{
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
         display: inline-flex;
+        justify-content: center;
+        align-items: center;
     }
     .middle button{
         height: 40px !important;
         width: 40px !important;
     }
     .bottom{
-        position: absolute;
-        left: 0;
-        bottom: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         width: 100%;
     }
-    .video-center-section button {
+    .video-controls-container button {
         background: none;
         border: none;
         color: inherit;
@@ -462,7 +469,7 @@
         opacity: .85;
         transition: opacity 150ms ease-in-out;
     }
-    .video-center-section button:hover {
+    .video-controls-container button:hover {
         opacity: 1;
     }
     .controls {
