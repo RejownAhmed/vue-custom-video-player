@@ -424,7 +424,6 @@
         background-color: rgba(0,0,0,0.3);
         padding: 0px 10px;
         box-sizing: border-box;
-        display: block;
     }
     .controls{
       display: flex;
@@ -434,6 +433,7 @@
       height: 100%;
     }
     .top{
+        margin-top: 10px;
         width: 100%;
         display: flex;
         justify-content: space-between;
