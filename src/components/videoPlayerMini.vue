@@ -1,239 +1,265 @@
 
 <script setup>
-    import {ref, onBeforeMount, watch, onMounted, computed} from 'vue'
-    import customRange from './customRangeController.vue'
-  
-    const props = defineProps(
-      {
-        url: String,
-        caption: String
-      }
-    )
-    /**
-     * Component Selector - Progress Slider
-    */
-    const videoContainer = ref()
-    /**
-     * Selector - Video Element When mounted
-    */
-    const videoEl = ref()
-    /**
-     * Video Caption Container
-    */
-    const captionContainer = ref()
-    /**
-     * Component Selector - Progress Slider
-    */
-    const progressSlider = ref()
-    /**
-     * Show Video Controls
-    */
-    const videoControls = ref(true)
-    /**
-     * Initial Progress
-    */
-    const videoProgress = ref(0)
-    /**
-     * Video Duration
-    */
-    const duration = ref('0:00:00')
-    /**
-     * currentTime ontimeupdate of the file
-    */
-    const currentTime = ref('0:00')
-    /**
-     * Video Caption
-    */
-    const captionText = ref('')
-    /**
-     * Loading or Not 
-    */
-    const loading = ref(true)
-    /**
-      * Playing or Not
-    */
-    const playing =  ref(false)
-    /**
-      * Playback Speed
-    */
-    const playbackspeed =  ref(1)
-    /**
-      * Fullscreen Mode
-    */
-    const fullscreen = ref(false)
-    /**
-      * Picture in Picture Mode
-    */
-    const miniscreen = ref(false)
-    /**
-      * Video Caption
-    */
-    const showCaption = ref(false)
-    /**
-     * Show/Hide Video Controls
-    */
-    function showControls() {
+  import {ref, onBeforeMount, watch, onMounted, computed} from 'vue'
+  import customRange from './customRangeController.vue'
+
+  const props = defineProps(
+    {
+      url: String,
+      caption: String
+    }
+  )
+  /**
+   * Component Selector - Progress Slider
+  */
+  const videoContainer = ref()
+  /**
+   * Selector - Video Element When mounted
+  */
+  const videoEl = ref()
+  /**
+   * Video Caption Container
+  */
+  const captionContainer = ref()
+  /**
+   * Component Selector - Progress Slider
+  */
+  const progressSlider = ref()
+  /**
+   * Show Video Controls
+  */
+  const videoControls = ref(true)
+  /**
+   * Initial Progress
+  */
+  const videoProgress = ref(0)
+  /**
+   * Video Duration
+  */
+  const duration = ref('0:00:00')
+  /**
+   * currentTime ontimeupdate of the file
+  */
+  const currentTime = ref('0:00')
+  /**
+   * Video Caption
+  */
+  const captionText = ref('')
+  /**
+   * Loading or Not 
+  */
+  const loading = ref(true)
+  /**
+    * Playing or Not
+  */
+  const playing =  ref(false)
+  /**
+    * Playback Speed
+  */
+  const playbackspeed =  ref(1)
+  /**
+    * Fullscreen Mode
+  */
+  const fullscreen = ref(false)
+  /**
+    * Picture in Picture Mode
+  */
+  const miniscreen = ref(false)
+  /**
+    * Video Caption
+  */
+  const showCaption = ref(false)
+ /**
+   * Show/Hide Video Controls
+  */
+  const hideControls = ()=>{
+    videoControls.value = false
+  }
+  let timer, idleTime;
+  function resetTimer() {
+      /*Set the timer to 0 */
+      idleTime = 0
+      /* Clear the previous interval */
+      clearInterval(timer)
       videoControls.value = true
+      /* Set a new interval */
+      timer = setInterval(startIdleTimer, 1000)
+      return
+  }
+
+  // Define the events that
+  // would reset the timer
+  onMounted(()=>{
+    videoContainer.value.onmousemove = resetTimer;
+    videoContainer.value.onmouseenter = resetTimer;
+    videoContainer.value.onmousedown = resetTimer;
+    videoContainer.value.ontouchstart = resetTimer;
+    videoContainer.value.ontouchmove = resetTimer;
+    videoContainer.value.onclick = resetTimer;
+    videoContainer.value.ondblclick = resetTimer;
+    videoContainer.value.onkeypress = resetTimer;
+  })
+
+  function startIdleTimer() {
+    idleTime++
+    if(idleTime >= 5) videoControls.value = false
+  }
+  /**
+   * Video Loaded in the DOM
+  */
+  const videoLoaded = ()=>{
+    const videoWidth = videoEl.value.getBoundingClientRect().width
+    let captionFontSize = 12
+    videoEl.value.textTracks[0].mode = "hidden"//Hide Subtitle
+    if(videoWidth > 400) captionFontSize = captionFontSize + Math.ceil((videoWidth - 400) / 100)
+    captionContainer.value.setAttribute('style', `font-size: ${captionFontSize+"px"}`)
+
+    setTimeout(()=>{
+      // videoEl.value.play()
+      // playing.value = true
+      loading.value = false //Hide loader
+    }, 200)
+    setDuration() //Set duration
+  }
+  //PlayPause
+  const togglePlay = ()=> {
+    if(videoEl.value.paused) {
+      videoEl.value.play()
+      playing.value = true
+      videoControls.value = false
+      return
+    } else{
+      videoEl.value.pause()
+      playing.value = false
+      showControls()
+      return
     }
-    function hideControls() {
-        playing.value ? videoControls.value = false : videoControls.value = true
+  }
+  const loadSubtitle = ()=>{
+    captionText.value = videoEl.value.textTracks[0].activeCues[0].text
+  }
+  /**
+   * Gets the duration of the video/audio file
+   * sets the duration to variable
+  **/
+  const setDuration = ()=>{
+    duration.value = formatDuration(videoEl.value.duration)//Get formatted time and set duration
+  }
+  const leadingZeroFormatter = new Intl.NumberFormat(undefined, {
+    minimumIntegerDigits: 2,
+  })
+  function formatDuration(time) {//Format Duration 
+    const seconds = Math.floor(time % 60)
+    const minutes = Math.floor(time / 60) % 60
+    const hours = Math.floor(time / 3600)
+    if (hours === 0) {
+      return `${minutes}:${leadingZeroFormatter.format(seconds)}`
+    } else {
+      return `${hours}:${leadingZeroFormatter.format(minutes)}:${leadingZeroFormatter.format(seconds)}`
     }
+  }
+  /**
+   * Watches for videoProgress changes 
+   * when user drag/clicks the slider
+  */
+  watch(videoProgress, (progress, prevProgress)=>{//set video progress
+    videoEl.value.currentTime = progress * videoEl.value.duration 
+  })
+  const setProgress = ()=>{
+    currentTime.value = formatDuration(videoEl.value.currentTime)
+    const duration = videoEl.value.duration
+    const percent = videoEl.value.currentTime / duration
     /**
-     * Video Loaded in the DOM
+    * Below codes shows how we can update the progress bar position
+    * Via the exposed template ref "ProgressPosition"
+    * All other ways show at least one bug
+    * See {@link customRange}
     */
-    const videoLoaded = ()=>{
-      const videoWidth = videoEl.value.getBoundingClientRect().width
-      let captionFontSize = 12
-      videoEl.value.textTracks[0].mode = "hidden"//Hide Subtitle
-      if(videoWidth > 400) captionFontSize = captionFontSize + Math.ceil((videoWidth - 400) / 100)
-      captionContainer.value.setAttribute('style', `font-size: ${captionFontSize+"px"}`)
-  
-      setTimeout(()=>{
-        // videoEl.value.play()
-        // playing.value = true
-        loading.value = false //Hide loader
-      }, 200)
-      setDuration() //Set duration
-    }
-    //PlayPause
-    const togglePlay = ()=> {
-      if(videoEl.value.paused) {
-        videoEl.value.play()
-        playing.value = true
-        videoControls.value = false
-        return
-      } else{
-        videoEl.value.pause()
-        playing.value = false
-        showControls()
-        return
-      }
-    }
-    const loadSubtitle = ()=>{
-      captionText.value = videoEl.value.textTracks[0].activeCues[0].text
-    }
-    /**
-     * Gets the duration of the video/audio file
-     * sets the duration to variable
-    **/
-    const setDuration = ()=>{
-      duration.value = formatDuration(videoEl.value.duration)//Get formatted time and set duration
-    }
-    const leadingZeroFormatter = new Intl.NumberFormat(undefined, {
-      minimumIntegerDigits: 2,
-    })
-    function formatDuration(time) {//Format Duration 
-      const seconds = Math.floor(time % 60)
-      const minutes = Math.floor(time / 60) % 60
-      const hours = Math.floor(time / 3600)
-      if (hours === 0) {
-        return `${minutes}:${leadingZeroFormatter.format(seconds)}`
-      } else {
-        return `${hours}:${leadingZeroFormatter.format(minutes)}:${leadingZeroFormatter.format(seconds)}`
-      }
-    }
-    /**
-     * Watches for videoProgress changes 
-     * when user drag/clicks the slider
-    */
-    watch(videoProgress, (progress, prevProgress)=>{//set video progress
-      videoEl.value.currentTime = progress * videoEl.value.duration 
-    })
-    const setProgress = ()=>{
-      currentTime.value = formatDuration(videoEl.value.currentTime)
-      const duration = videoEl.value.duration
-      const percent = videoEl.value.currentTime / duration
-      /**
-      * Below codes shows how we can update the progress bar position
-      * Via the exposed template ref "ProgressPosition"
-      * All other ways show at least one bug
-      * See {@link customRange}
-      */
-      progressSlider.value.progressPosition = percent
-  
-      if (duration > 0) {
-        for (let i = 0; i < videoEl.value.buffered.length; i++) {
-          if (
-            videoEl.value.buffered.start(videoEl.value.buffered.length - 1 - i) < videoEl.value.currentTime
-          ) {
-              progressSlider.value.bufferPosition = (videoEl.value.buffered.end(videoEl.value.buffered.length - 1 - i)) / duration
-            break;
-          }
+    progressSlider.value.progressPosition = percent
+
+    if (duration > 0) {
+      for (let i = 0; i < videoEl.value.buffered.length; i++) {
+        if (
+          videoEl.value.buffered.start(videoEl.value.buffered.length - 1 - i) < videoEl.value.currentTime
+        ) {
+            progressSlider.value.bufferPosition = (videoEl.value.buffered.end(videoEl.value.buffered.length - 1 - i)) / duration
+          break;
         }
       }
-      
     }
-  
-    const toggleFullScreenMode = ()=> {//Full Screen Mode
-      if (!document.fullscreenElement) {
-          if (videoContainer.value.requestFullscreen) {
-              videoContainer.value.requestFullscreen()
-          } else if (videoContainer.value.webkitRequestFullscreen) {/* Safari */
-              videoContainer.value.webkitRequestFullscreen()
-          } else if (videoContainer.value.msRequestFullscreen) {/* IE11 */
-              videoContainer.value.msRequestFullscreen()
-          } else if (videoContainer.value.mozRequestFullscreen) {/* Mozilla Firefox */
-              videoContainer.value.mozRequestFullscreen()
-          }
-          fullscreen.value = true
-  
-      } else if(document.exitFullscreen){
-          if(document.exitFullscreen) {
-            document.exitFullscreen();
-          } else if(document.mozCancelFullScreen) {/* Mozilla Firefox */
-            document.mozCancelFullScreen()
-          } else if(document.webkitExitFullscreen) {/* Safari */
-            document.webkitExitFullscreen()
-          } else if(document.msExitFullscreen) {/* IE11 */
-            document.msExitFullscreen()
-          }
-          fullscreen.value = false
-  
-      }
-    }
-  
-    if (document.addEventListener)
-    {
-      document.addEventListener('fullscreenchange', exitHandler)
-      document.addEventListener('mozfullscreenchange', exitHandler)
-      document.addEventListener('MSFullscreenChange', exitHandler)
-      document.addEventListener('webkitfullscreenchange', exitHandler)
-    }
-    function exitHandler(e) {//Exit full screen
-      if (!document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement){
+    
+  }
+
+  const toggleFullScreenMode = ()=> {//Full Screen Mode
+    if (!document.fullscreenElement) {
+        if (videoContainer.value.requestFullscreen) {
+            videoContainer.value.requestFullscreen()
+        } else if (videoContainer.value.webkitRequestFullscreen) {/* Safari */
+            videoContainer.value.webkitRequestFullscreen()
+        } else if (videoContainer.value.msRequestFullscreen) {/* IE11 */
+            videoContainer.value.msRequestFullscreen()
+        } else if (videoContainer.value.mozRequestFullscreen) {/* Mozilla Firefox */
+            videoContainer.value.mozRequestFullscreen()
+        }
+        fullscreen.value = true
+
+    } else if(document.exitFullscreen){
+        if(document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if(document.mozCancelFullScreen) {/* Mozilla Firefox */
+          document.mozCancelFullScreen()
+        } else if(document.webkitExitFullscreen) {/* Safari */
+          document.webkitExitFullscreen()
+        } else if(document.msExitFullscreen) {/* IE11 */
+          document.msExitFullscreen()
+        }
         fullscreen.value = false
-      }
+
     }
-  
-    const toggleClass = computed(()=>{//Set classed for theater/full-screen mode
-      if (fullscreen.value) {
-        return 'full-screen'
-      }  
-      return ''
-    })
-    //Playback Speed
-    const changePlaybackSpeed = ()=> {
-        let newPlaybackRate = videoEl.value.playbackRate + 0.25
-        if (newPlaybackRate > 2) newPlaybackRate = 0.25
-        videoEl.value.playbackRate = newPlaybackRate
-        playbackspeed.value = newPlaybackRate
+  }
+
+  if (document.addEventListener)
+  {
+    document.addEventListener('fullscreenchange', exitHandler)
+    document.addEventListener('mozfullscreenchange', exitHandler)
+    document.addEventListener('MSFullscreenChange', exitHandler)
+    document.addEventListener('webkitfullscreenchange', exitHandler)
+  }
+  function exitHandler(e) {//Exit full screen
+    if (!document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement){
+      fullscreen.value = false
     }
-  
-    /**
-     * Fire when video finished playing
-    */
-    function videoEnded(){
-        playing.value = false//Change playing icon to pause
-        videoControls.value = true
-    }
+  }
+
+  const toggleClass = computed(()=>{//Set classed for theater/full-screen mode
+    if (fullscreen.value) {
+      return 'full-screen'
+    }  
+    return ''
+  })
+  //Playback Speed
+  const changePlaybackSpeed = ()=> {
+      let newPlaybackRate = videoEl.value.playbackRate + 0.25
+      if (newPlaybackRate > 2) newPlaybackRate = 0.25
+      videoEl.value.playbackRate = newPlaybackRate
+      playbackspeed.value = newPlaybackRate
+  }
+
+  /**
+   * Fire when video finished playing
+  */
+  function videoEnded(){
+      playing.value = false//Change playing icon to pause
+      videoControls.value = true
+  }
   </script>
   
   <template>
     <div class="mini-video-container" 
       :class="toggleClass"
       :ref="(e)=> videoContainer = e"
-      :onmouseover="showControls"
-      :onmouseout="hideControls">
+      :onmouseleave="hideControls"
+    >
       <div class="progress-section">
         <div class="caption-container" v-show="showCaption">
           <div :ref="e => captionContainer = e">{{captionText}}</div>

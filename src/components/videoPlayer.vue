@@ -92,11 +92,36 @@
   /**
    * Show/Hide Video Controls
   */
-  function showControls() {
-    videoControls.value = true
+  const hideControls = ()=>{
+    videoControls.value = false
   }
-  function hideControls() {
-    playing.value ? videoControls.value = false : videoControls.value = true
+  let timer, idleTime;
+  function resetTimer() {
+      /*Set the timer to 0 */
+      idleTime = 0
+      /* Clear the previous interval */
+      clearInterval(timer)
+      videoControls.value = true
+      /* Set a new interval */
+      timer = setInterval(startIdleTimer, 1000)
+  }
+
+  // Define the events that
+  // would reset the timer
+  onMounted(()=>{
+    videoContainer.value.onmousemove = resetTimer;
+    videoContainer.value.onmouseenter = resetTimer;
+    videoContainer.value.onmousedown = resetTimer;
+    videoContainer.value.ontouchstart = resetTimer;
+    videoContainer.value.ontouchmove = resetTimer;
+    videoContainer.value.onclick = resetTimer;
+    videoContainer.value.ondblclick = resetTimer;
+    videoContainer.value.onkeypress = resetTimer;
+  })
+
+  function startIdleTimer() {
+    idleTime++
+    if(idleTime >= 5) videoControls.value = false
   }
   /**
    * Video Loaded in the DOM
@@ -120,12 +145,10 @@
     if(videoEl.value.paused) {
       videoEl.value.play()
       playing.value = true
-      hideControls()
       return
     } else{
       videoEl.value.pause()
       playing.value = false
-      showControls()
       return
     }
   }
@@ -395,13 +418,16 @@
   <div class="video-container" 
     :class="toggleClass"
     :ref="(e)=> videoContainer = e"
-    :onmouseover="showControls"
-    :onmouseout="hideControls">
+    :onmouseleave="hideControls"
+  >
     <div class="video-bottom-section">
       <div class="caption-container" v-show="showCaption">
         <div :ref="e => captionContainer = e">{{captionText}}</div>
       </div>
-      <div class="video-controls-container" v-show="videoControls">
+      <div 
+        class="video-controls-container" 
+        v-show="videoControls"
+      >
           <custom-range 
             v-model="videoProgress" 
             expand-on-hover
@@ -410,85 +436,91 @@
           >
             <img class="preview-img">
           </custom-range>
-        <div class="controls">
-          <button class="play-pause-btn" @click="togglePlay">
-            <svg v-if="!playing" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-            </svg>
-            <svg v-if="playing" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
-            </svg>
-          </button>
-          <div class="volume-container">
-            <button @click="toggleMute">
-              <svg v-if="!muted && volumeLevel == 'high'" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" />
-              </svg>
-              <svg v-if="!muted && volumeLevel == 'low'" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" />
-              </svg>
-              <svg v-if="muted" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" />
-              </svg>
-            </button>
-            <custom-range 
-              :ref="(e)=> volumeSlider = e"
-              v-model="volume"
-              class="volume-slider"
-              progress-color="white"
-              thumb-color="white"
-              thumb-height="400%"
-              always-show-thumb
-              no-preview-bar>
-            </custom-range>
+          <div class="controls">
+            <div class="left">
+              <button class="play-pause-btn" @click="togglePlay">
+                  <svg v-if="!playing" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                  </svg>
+                  <svg v-if="playing" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                  </svg>
+              </button>
+              <div class="volume-container">
+                <button @click="toggleMute">
+                    <svg v-if="!muted && volumeLevel == 'high'" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" />
+                    </svg>
+                    <svg v-if="!muted && volumeLevel == 'low'" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" />
+                    </svg>
+                    <svg v-if="muted" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" />
+                    </svg>
+                </button>
+                <div class="volume-slider">
+                    <custom-range
+                      class="volume-range"
+                      :ref="(e)=> volumeSlider = e"
+                      v-model="volume"
+                      progress-color="white"
+                      thumb-color="white"
+                      thumb-height="400%"
+                      always-show-thumb
+                      no-preview-bar>
+                    </custom-range>
+                </div>
+              </div>
+              <div class="duration-container">
+                  <p>{{currentTime}} / {{duration}}</p>
+              </div>
+            </div>
+            <div class="right">
+              <button
+                  @click="showCaption = !showCaption"
+                  class="captions-btn"
+                  :style="showCaption ? {borderBottom:' 3px solid red'} : ''"
+              >
+                  <svg viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z" />
+                  </svg>
+              </button>
+              <button class="speed-btn wide-btn" @click="changePlaybackSpeed">
+                  {{playbackspeed}}x
+              </button>
+              <button class="theater-btn" @click="toggleTheaterMode">
+                  <svg v-if="!theater" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/>
+                  </svg>
+                  <svg v-if="theater" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19 7H5c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H5V9h14v6z"/>
+                  </svg>
+              </button>
+              <button class="fullscreen-btn" @click="toggleFullScreenMode">
+                  <svg v-if="!fullscreen" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                  </svg>
+                  <svg v-if="fullscreen" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                  </svg>
+              </button>
+            </div>
           </div>
-          <div class="duration-container">
-            <div>{{currentTime}}</div>
-            /
-            <div>{{duration}}</div>
-          </div>
-          <button 
-            @click="showCaption = !showCaption" 
-            class="captions-btn"
-            :style="showCaption ? {borderBottom:' 3px solid red'} : ''">
-            <svg viewBox="0 0 24 24">
-              <path fill="currentColor" d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z" />
-            </svg>   
-          </button>
-          <button class="speed-btn wide-btn" @click="changePlaybackSpeed">
-            {{playbackspeed}}x
-          </button>
-          <button class="theater-btn" @click="toggleTheaterMode">
-            <svg v-if="!theater" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/>
-            </svg>
-            <svg v-if="theater" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M19 7H5c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H5V9h14v6z"/>
-            </svg>
-          </button>
-          <button class="fullscreen-btn" @click="toggleFullScreenMode">
-            <svg v-if="!fullscreen" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-            </svg>
-            <svg v-if="fullscreen" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-            </svg>
-          </button>
-        </div>
       </div>
 
     </div>
     <h1 class="loader" v-if="loading">Loading....</h1>
     <video 
-      :src="props.url" 
-      :ontimeupdate="setProgress" 
-      :onvolumechange="updateVolume" 
-      :onloadeddata="videoLoaded"
-      :onended="videoEnded"
-      :ref="(e)=> videoEl = e"
-      @click="togglePlay">
-      <track kind="captions" type="text/vtt" srclang="en" :src="props.caption" default :oncuechange="loadSubtitle">
-    	Your browser does not support HTML5 video.
+        :src="props.url" 
+        :ontimeupdate="setProgress" 
+        :onvolumechange="updateVolume" 
+        :onloadeddata="videoLoaded"
+        :onended="videoEnded"
+        :ref="(e)=> videoEl = e"
+        @click="togglePlay"
+    >
+        <track kind="captions" type="text/vtt" srclang="en" :src="props.caption" default :oncuechange="loadSubtitle">
+        Your browser does not support HTML5 video.
     </video>
 
   </div>
@@ -581,14 +613,19 @@
     aspect-ratio: 6 / 1;
     z-index: -1;
     pointer-events: none;
+    padding: 0px 5px;
   }
   .video-controls-container .controls {
     display: flex;
-    gap: .5rem;
-    padding: .25rem;
     align-items: center;
+    justify-content: space-between;
   }
 
+  .controls .left, .controls .right{
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+  }
   .video-controls-container .controls button {
     background: none;
     border: none;
@@ -612,23 +649,25 @@
   }
 
   .volume-slider {
+    overflow-x: hidden;
     width: 0;
+    visibility: hidden;
+    padding: 3px 8px;
+    margin-left: 0.5rem;
     transform-origin: left;
-    transform: scaleX(0);
-    transition: width 150ms ease-in-out, transform 150ms ease-in-out;
+    transition: all 150ms ease-in-out, transform 150ms ease-in-out;
   }
 
   .volume-container:hover .volume-slider,
   .volume-slider:focus-within {
     width: 52px;
-    transform: scaleX(1);
+    visibility: visible
   }
 
   .duration-container {
     display: flex;
     align-items: center;
-    gap: .25rem;
-    flex-grow: 1;
+    font-size: 14px;
   }
 
   .video-controls-container .controls button.wide-btn {
