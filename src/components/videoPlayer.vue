@@ -301,6 +301,14 @@
 
   }
 
+  const videoWaiting = ()=>{
+      console.log("waiting")
+      loader.value = true
+  }
+  const videoPlaying = ()=>{
+      console.log("playing")
+      loader.value = false
+  }
   /**
    * Toggle Screen Mode
   */
@@ -518,8 +526,8 @@
         :ontimeupdate="setProgress" 
         :onvolumechange="updateVolume" 
         :onloadeddata="videoLoaded"
-        :onwaiting="loader = true"
-        :onplaying="loader = false"
+        :onwaiting="videoWaiting"
+        :onplaying="videoPlaying"
         :onended="videoEnded"
         :ref="(e)=> videoEl = e"
         @click="togglePlay"
