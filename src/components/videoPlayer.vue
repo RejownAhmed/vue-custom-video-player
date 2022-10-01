@@ -142,6 +142,12 @@
     }, 200)
     setDuration() //Set duration
   }
+  const videoWaiting = ()=>{
+      loading.value = true
+  }
+  const videoPlaying = ()=>{
+      loading.value = false
+  }
   //PlayPause
   const togglePlay = ()=> {
     if(videoEl.value.paused) {
@@ -174,10 +180,10 @@
     if (volume.value == 0) {
       videoEl.value.muted == true
       muted.value = true
-    } //If muted mute the video
+    } // If muted mute the video
   })
-  // Gets a varibale and watches for changes 
-  watch(volume, (newVolume, prevVolume)=>{//set volume
+  // Gets a varibale and watches for changes
+  watch(volume, (newVolume, prevVolume)=>{// set volume
     videoEl.value.volume = newVolume 
     if( volume.value > 0 ) {//if user changes volume after muting unmute the video and set new volume
         muted.value = false
@@ -186,7 +192,7 @@
   })
   /**
    * Checks if user has changed device volume and sets the volume
-   */
+  */
   const updateVolume = () =>{//On Volume Change
       volume.value = videoEl.value.volume
       volumeSlider.value.progressPosition = videoEl.value.volume
@@ -208,7 +214,6 @@
     * So that user can at least understand that the video is unmuted
   */
   const toggleMute = ()=> {
-    console.log(videoEl.value.muted);
     videoEl.value.muted = !videoEl.value.muted
     if (videoEl.value.muted) {
       if (volume.value == 0) {
@@ -254,10 +259,10 @@
     const duration = videoEl.value.duration
     const percent = videoEl.value.currentTime / duration
     /**
-    * Below codes shows how we can update the progress bar position
-    * Via the exposed template ref "ProgressPosition"
-    * All other ways show at least one bug
-    * See {@link customRange}
+      * Below codes shows how we can update the progress bar position
+      * Via the exposed template ref "ProgressPosition"
+      * All other ways show at least one bug
+      * See {@link customRange}
     */
     progressSlider.value.progressPosition = percent
 
@@ -299,15 +304,6 @@
         }
     } 
 
-  }
-
-  const videoWaiting = ()=>{
-      console.log("waiting")
-      loader.value = true
-  }
-  const videoPlaying = ()=>{
-      console.log("playing")
-      loader.value = false
   }
   /**
    * Toggle Screen Mode
@@ -523,12 +519,12 @@
     <h1 class="loader" v-if="loading">Loading....</h1>
     <video 
         :src="props.url" 
-        :ontimeupdate="setProgress" 
-        :onvolumechange="updateVolume" 
         :onloadeddata="videoLoaded"
         :onwaiting="videoWaiting"
         :onplaying="videoPlaying"
         :onended="videoEnded"
+        :ontimeupdate="setProgress" 
+        :onvolumechange="updateVolume" 
         :ref="(e)=> videoEl = e"
         @click="togglePlay"
     >

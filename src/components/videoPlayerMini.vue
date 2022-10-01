@@ -122,6 +122,12 @@
     }, 200)
     setDuration() //Set duration
   }
+  const videoWaiting = ()=>{
+      loading.value = true
+  }
+  const videoPlaying = ()=>{
+      loading.value = false
+  }
   //PlayPause
   const togglePlay = ()=> {
     if(videoEl.value.paused) {
@@ -327,8 +333,8 @@
         :src="props.url" 
         :ontimeupdate="setProgress" 
         :onloadeddata="videoLoaded"
-        :onwaiting="loader = true"
-        :onplaying="loader = false"
+        :onwaiting="videoWaiting"
+        :onplaying="videoPlaying"
         :onended="videoEnded"
         :ref="(e)=> videoEl = e">
         <track kind="captions" type="text/vtt" srclang="en" :src="props.caption" default :oncuechange="loadSubtitle">
