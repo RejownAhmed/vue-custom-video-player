@@ -1,6 +1,6 @@
 
 <script setup>
-  import {ref, onBeforeMount, watch, onMounted, computed} from 'vue'
+  import {ref, onBeforeMount, watch, onMounted, computed, onBeforeUnmount} from 'vue'
   import customRange from './customRangeController.vue'
 
   const props = defineProps(
@@ -118,7 +118,9 @@
     videoContainer.value.ondblclick = resetTimer;
     videoContainer.value.onkeypress = resetTimer;
   })
-
+  onBeforeUnmount(()=>{
+    clearInterval(timer)// Clear the interval when unMounted
+  })
   function startIdleTimer() {
     idleTime++
     if(idleTime >= 5) videoControls.value = false
@@ -148,6 +150,7 @@
       return
     } else{
       videoEl.value.pause()
+      loading.value = false //Hide loader(If enabled by onwaiting event)
       playing.value = false
       return
     }
@@ -460,14 +463,14 @@
                 </button>
                 <div class="volume-slider">
                     <custom-range
-                      class="volume-range"
-                      :ref="(e)=> volumeSlider = e"
-                      v-model="volume"
-                      progress-color="white"
-                      thumb-color="white"
-                      thumb-height="400%"
-                      always-show-thumb
-                      no-preview-bar>
+                        class="volume-range"
+                        :ref="(e)=> volumeSlider = e"
+                        v-model="volume"
+                        progress-color="white"
+                        thumb-color="white"
+                        thumb-height="400%"
+                        always-show-thumb
+                        no-preview-bar>
                     </custom-range>
                 </div>
               </div>
@@ -515,6 +518,8 @@
         :ontimeupdate="setProgress" 
         :onvolumechange="updateVolume" 
         :onloadeddata="videoLoaded"
+        :onwaiting="loader = true"
+        :onplaying="loader = false"
         :onended="videoEnded"
         :ref="(e)=> videoEl = e"
         @click="togglePlay"

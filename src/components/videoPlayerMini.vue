@@ -1,6 +1,6 @@
 
 <script setup>
-  import {ref, onBeforeMount, watch, onMounted, computed} from 'vue'
+  import {ref, onBeforeUnmount, watch, onMounted, computed} from 'vue'
   import customRange from './customRangeController.vue'
 
   const props = defineProps(
@@ -86,7 +86,6 @@
       timer = setInterval(startIdleTimer, 1000)
       return
   }
-
   // Define the events that
   // would reset the timer
   onMounted(()=>{
@@ -99,7 +98,9 @@
     videoContainer.value.ondblclick = resetTimer;
     videoContainer.value.onkeypress = resetTimer;
   })
-
+  onBeforeUnmount(()=>{
+    clearInterval(timer)// Clear the interval when unMounted
+  })
   function startIdleTimer() {
     idleTime++
     if(idleTime >= 5) videoControls.value = false
@@ -130,6 +131,7 @@
       return
     } else{
       videoEl.value.pause()
+      loading.value = false //Hide loader(If enabled by onwaiting event)
       playing.value = false
       return
     }
@@ -325,6 +327,8 @@
         :src="props.url" 
         :ontimeupdate="setProgress" 
         :onloadeddata="videoLoaded"
+        :onwaiting="loader = true"
+        :onplaying="loader = false"
         :onended="videoEnded"
         :ref="(e)=> videoEl = e">
         <track kind="captions" type="text/vtt" srclang="en" :src="props.caption" default :oncuechange="loadSubtitle">
