@@ -328,7 +328,7 @@
       :ref="(e)=> videoContainer = e"
       :onmouseleave="hideControls"
     >
-      <div class="skip-btns" :ontouchstart="loadTouch" :ontouchmove="loadTouch">
+      <div class="skip-btns" :ontouchstart="loadTouch">
         <div class="left">
             <div class="fastBackward"></div>
             <button>
