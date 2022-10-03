@@ -9,6 +9,10 @@
       caption: String
     }
   )
+  const showForward = ref(false)
+  const showBackward = ref(false)
+  const skippedForward = ref(0)
+  const skippedBackward = ref(0)
   /**
    * Component Selector - Progress Slider
   */
@@ -75,29 +79,48 @@
   const hideControls = ()=>{
     videoControls.value = false
   }
+
+  let tapped = false
+  const loadTouch = (e)=>{
+    if(!tapped){ //if tap is not set, set up single tap
+      tapped=setTimeout(function(){
+          tapped=null
+          //when single tapped
+          resetTimer(e)
+      },300);   //wait 300ms then run single click code
+    } else {    //tapped within 300ms of last tap. double tap
+      clearTimeout(tapped); //stop single tap callback
+      tapped=null
+      //when double tapped
+      if (e.target.classList.contains('fastForward')) {
+          fastForward()
+      } else if (e.target.classList.contains('fastBackward')) {
+          fastBackward()
+      }
+    }
+    e.preventDefault()
+  }
+
   let timer, idleTime;
-  function resetTimer() {
+  function resetTimer(e) {
+      if(e.target.classList.contains('controls')) {
+        e.stopPropagation()
+        videoControls.value = false
+      } else {
+        videoControls.value = true
+      }
+      // console.log(e);
       /*Set the timer to 0 */
       idleTime = 0
       /* Clear the previous interval */
       clearInterval(timer)
-      videoControls.value = true
-      /* Set a new interval */
       timer = setInterval(startIdleTimer, 1000)
+      /* Set a new interval */
       return
   }
   // Define the events that
   // would reset the timer
-  onMounted(()=>{
-    videoContainer.value.onmousemove = resetTimer;
-    videoContainer.value.onmouseenter = resetTimer;
-    videoContainer.value.onmousedown = resetTimer;
-    videoContainer.value.ontouchstart = resetTimer;
-    videoContainer.value.ontouchmove = resetTimer;
-    videoContainer.value.onclick = resetTimer;
-    videoContainer.value.ondblclick = resetTimer;
-    videoContainer.value.onkeypress = resetTimer;
-  })
+
   onBeforeUnmount(()=>{
     clearInterval(timer)// Clear the interval when unMounted
   })
@@ -129,14 +152,16 @@
       loading.value = false
   }
   //PlayPause
+  let toggleVideoControls;
   const togglePlay = ()=> {
     if(videoEl.value.paused) {
       videoEl.value.play()
       playing.value = true
-      videoControls.value = false
+      toggleVideoControls = setTimeout(()=> videoControls.value = false, 1000)
       return
     } else{
       videoEl.value.pause()
+      clearTimeout(toggleVideoControls)
       loading.value = false //Hide loader(If enabled by onwaiting event)
       playing.value = false
       return
@@ -151,6 +176,7 @@
   **/
   const setDuration = ()=>{
     duration.value = formatDuration(videoEl.value.duration)//Get formatted time and set duration
+    currentTime.value = formatDuration(videoEl.value.currentTime)//Get formatted current time
   }
   const leadingZeroFormatter = new Intl.NumberFormat(undefined, {
     minimumIntegerDigits: 2,
@@ -251,7 +277,42 @@
       videoEl.value.playbackRate = newPlaybackRate
       playbackspeed.value = newPlaybackRate
   }
+  let skippedForwardTimer, skippedBackwardTimer;
+  const fastForward = ()=>{
+    showForward.value = true
+    skip(10)
+    var hideForward = setTimeout(()=> showForward.value = false, 500)
+    clearTimeout(skippedForwardTimer) //if clicked more than once in 1s
+    //clear the timeout and increase the skippedForward value
+    skippedForward.value += 10
+    //if clicked only once make the skippedForward value to 0 after 1s
+    skippedForwardTimer = setTimeout(()=> skippedForward.value = 0, 1000)
+  }
+  const fastBackward = ()=>{
+    showBackward.value = true
+    skip(-10)
+    var hideBackward = setTimeout(()=> showBackward.value = false, 500)
+    clearTimeout(skippedBackwardTimer) //if clicked more than once in 1s
+    //clear the timeout and increase the skippedBackward value
+    skippedBackward.value += 10
+    //if clicked only once make the skippedBackward value to 0 after 1s
+    skippedBackwardTimer = setTimeout(()=> skippedBackward.value = 0, 1000)
+  }
 
+  /**
+   * Skip to a certain position
+  */
+ let skipped;
+  const skip = (skipPosition)=> {//Skip Video Progress
+        let newPosition = videoEl.value.currentTime + skipPosition
+        if (newPosition >= videoEl.value.duration) {
+            videoEl.value.currentTime = videoEl.value.duration - 1
+        } else if(newPosition <= 0){
+            videoEl.value.currentTime = 0
+        } else {
+            videoEl.value.currentTime = newPosition
+        }
+  }
   /**
    * Fire when video finished playing
   */
@@ -267,9 +328,53 @@
       :ref="(e)=> videoContainer = e"
       :onmouseleave="hideControls"
     >
+      <div class="skip-btns" :ontouchstart="loadTouch" :ontouchmove="loadTouch">
+        <div class="left">
+            <div class="fastBackward"></div>
+            <button>
+              <svg fill="#ccc" viewBox="0 0 24 24">
+                <g>
+                  <Transition name="forwardThree">
+                    <path v-show="showBackward" d="M8.86,18.54V5.43L.54,12.07Zm-.73-1.49-6.42-5L8.13,7Z"/>
+                  </Transition>
+                  <Transition name="forwardTwo">
+                    <path v-show="showBackward" d="M8.49,12.63l.37.28,7.28,5.66V5.46L8.86,11.27l-.73.58v.49ZM15.4,7v10.1L9,12.1Z"/>
+                  </Transition>
+                  <Transition name="forwardOne">
+                    <path v-show="showBackward" d="M15.77,12.59l.37.29,7.32,5.69V5.46l-7.32,5.85-.37.29-.37.3v.41Zm7-5.61v10.1l-6.41-5Z"/>
+                  </Transition>
+                </g>
+              </svg>
+              <Transition name="skipText">
+                <div v-show="showBackward">{{skippedBackward}}s</div>
+              </Transition>
+            </button>
+        </div>
+        <div class="right">
+            <div class="fastForward"></div>
+            <button>
+                <svg fill="#ccc" viewBox="0 0 24 24" stroke="3px">
+                  <g>
+                      <Transition name="forwardThree">
+                        <path v-show="showForward" d="M15.14,5.46V18.57l8.32-6.64ZM15.87,7l6.42,5-6.42,5.12Z"/>
+                      </Transition>
+                      <Transition name="forwardTwo">
+                        <path v-show="showForward" d="M15.51,11.37l-.37-.28L7.86,5.43V18.54l7.28-5.81.73-.58v-.49ZM8.6,17V6.92l6.41,5Z"/>
+                      </Transition>
+                      <Transition name="forwardOne">
+                        <path v-show="showForward" d="M8.23,11.41l-.37-.29L.54,5.43V18.54l7.32-5.85.37-.29.37-.3v-.41ZM1.28,17V6.92l6.41,5Z"/>
+                      </Transition>
+                    </g>
+                </svg>
+                <Transition name="skipText">
+                  <div v-show="showForward">{{skippedForward}}s</div>
+                </Transition>
+            </button>
+        </div>
+      </div>
       <div class="progress-section">
           <div class="caption-container" v-show="showCaption">
-            <div :ref="e => captionContainer = e">{{captionText}}</div>
+            <div class="caption-text" :ref="e => captionContainer = e">{{captionText}}</div>
           </div>
           <custom-range
               class="higher" 
@@ -282,7 +387,10 @@
               :ref="(e)=> progressSlider = e">
           </custom-range>
       </div>
-      <div class="video-controls-container" v-show="videoControls">
+      <div class="video-controls-container" 
+        v-show="videoControls"
+        :ontouchstart="resetTimer" :ontouchmove="resetTimer"
+      >
             <div class="controls">
                 <div class="top">
                     <div class="left"></div>
@@ -344,29 +452,7 @@
     </div>
   </template>
   
-  <style scoped>
-    /** 
-      * Hide all controls
-    */
-    ::-webkit-media-controls {
-      display:none !important;
-    }
-    video::-webkit-media-controls {
-      display:none !important;
-    }
-    video::-webkit-media-controls-enclosure {
-      display:none !important;
-    }
-    /*
-    *Video Loader
-    */
-    .loader{
-      position: absolute;
-      color: #fff;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
+  <style lang="scss" scoped>
     .mini-video-container {
       font-family: Arial, Helvetica, sans-serif;
       position: relative;
@@ -377,132 +463,263 @@
       justify-content: center;
       margin-inline: auto;
       background-color: black;
-    }
-  
-    .mini-video-container.theater,
-    .mini-video-container.full-screen {
-      max-width: initial;
-      width: 100%;
-    }
-  
-    .mini-video-container.theater {
-      max-height: 90vh;
-    }
-  
-    .mini-video-container.full-screen {
-      max-height: 100vh;
-    }
-  
-    .progress-section{
-        position: absolute;
-        bottom: 0;
-        left: 0;
+      &.theater, &.full-screen {
+        max-width: initial;
         width: 100%;
+      }
+      &.full-screen {
+        max-height: 100vh;
+      }
+      &.theater {
+        max-height: 90vh;
+      }
+      /*
+      *Video Loader
+      */
+      .loader{
+        position: absolute;
+        color: #fff;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .skip-btns{
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .left, .right {
+          position: relative;
+          width: 40%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10;
+          button{
+            background: transparent;
+            border: none;
+            outline: none;
+            z-index: 3;
+            display: inline-block;
+            gap: 0.5rem;
+            div{
+              font-size: 16px;
+              color: #ccc;
+              overflow: hidden;
+              width: 35px;
+              height: 20px;
+            }
+            svg{
+              height: 24px;
+              width: auto;
+            }
+
+          }
+        }
+        .left {
+          .fastBackward{
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: transparent;
+              z-index: 10;
+          }
+        }
+        .right{
+          .fastForward{
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: transparent;
+              z-index: 10;
+          }
+        }
+      }
+      .progress-section{
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          .caption-container{
+              width: 100%;
+              margin-bottom: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              .caption-text{
+                background: rgba(0,0,0,0.2);
+                color: #fff;
+                padding: 5px;
+                max-width: 85%;
+                display: inline-block;
+                text-align: center;
+            }
+          }
+        }
+        .video-controls-container{
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 100;
+            width: 100%;
+            color: #fff;
+            background-color: rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            button {
+                background: none;
+                border: none;
+                color: inherit;
+                padding: 0;
+                cursor: pointer;
+                opacity: .85;
+                transition: opacity 150ms ease-in-out;
+                &.wide-btn {
+                  width: 35px;
+                  font-size: 14px;
+                }
+                &:hover {
+                    opacity: 1;
+                }
+            }
+            .controls{
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              align-items: center;
+              height: 100%;
+              width: 100%;
+              padding: 0rem .2rem;
+              .top{
+                  margin-top: 10px;
+                  width: 100%;
+                  display: flex;
+                  justify-content: space-between;
+                  align-content: flex-start;
+                  .left, .right{
+                    display: inline-flex;
+                  }
+                  button svg{
+                    height: 30px;
+                    width: auto;
+                  }
+              }
+              .middle{
+                  display: inline-flex;
+                  justify-content: center;
+                  align-items: center;
+                  button svg{
+                      height: 50px;
+                      width: auto;
+                  }
+              }
+              .bottom{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                button svg{
+                    height: 30px;
+                    width: auto;
+                }
+                .duration-container {
+                    margin-top: -3px;
+                    color: #fff;
+                    display: flex;
+                    align-items: center;
+                    gap: .25rem;
+                    flex-grow: 1;
+                    margin-left: 5px;
+                    font-size: 12px;
+                }
+              }
+            }
+          }
+          video {
+            width: 100%;
+          }
+          /** 
+            * Hide all controls
+          */
+          ::-webkit-media-controls {
+            display:none !important;
+          }
+          video::-webkit-media-controls {
+            display:none !important;
+          }
+          video::-webkit-media-controls-enclosure {
+            display:none !important;
+          }
     }
+  
     .higher{
         position: relative;
         z-index: 1080;
     }
-    video {
-      width: 100%;
+    /* Vue Animation */
+    .forwardOne-enter-active,
+    .forwardTwo-enter-active,
+    .forwardThree-enter-active {
+      animation: .1s fade-in;
+      opacity: 0;
     }
-    .caption-container{
-        width: 100%;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .forwardOne-leave-active,
+    .forwardTwo-leave-active,
+    .forwardThree-leave-active {
+      animation: .2s fade-in reverse;
     }
-    .caption-container div{
-        background: rgba(0,0,0,0.3);
-        color: #fff;
-        padding: 5px;
-        max-width: 85%;
-        display: inline-block;
-        text-align: center;
+    .forwardTwo-enter-active,
+    .forwardTwo-leave-active {
+      animation-delay: .15s;
     }
-    .video-controls-container{
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        z-index: 100;
-        width: 100%;
-        color: #fff;
-        background-color: rgba(0,0,0,0.3);
-        padding: 0px 10px;
-        box-sizing: border-box;
+
+    .forwardThree-enter-active,
+    .forwardThree-leave-active {
+      animation-delay: .3s;
     }
-    .controls{
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      height: 100%;
+    /* Fast backward Animation  */
+    .backwardOne-enter-active,
+    .backwardTwo-enter-active,
+    .backwardThree-enter-active {
+      animation: .1s fade-in;
+      opacity: 0;
     }
-    .top{
-        margin-top: 10px;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-content: flex-start;
+    .backwardOne-leave-active,
+    .backwardTwo-leave-active,
+    .backwardThree-leave-active {
+      animation: .2s fade-in reverse;
     }
-    .top .left, .top .right{
-      display: inline-flex;
+    .backwardTwo-enter-active,
+    .backwardTwo-leave-active {
+      animation-delay: .15s;
     }
-    .middle{
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
+
+    .backwardThree-enter-active,
+    .backwardThree-leave-active {
+      animation-delay: .3s;
     }
-    .middle button{
-        height: 40px !important;
-        width: 40px !important;
+
+    .skipText-enter-active{
+      animation: fade-in 0.5s;
     }
-    .bottom{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
+    .skipText-leave-active{
+      animation: fade-in 0.5s reverse;
     }
-    .video-controls-container button {
-        background: none;
-        border: none;
-        color: inherit;
-        padding: 0;
-        height: 24px;
-        width: 24px;
-        font-size: 1.1rem;
-        cursor: pointer;
-        opacity: .85;
-        transition: opacity 150ms ease-in-out;
-    }
-    .video-controls-container button:hover {
+
+     /* Animation  */
+    @keyframes fade-in {
+      0% {
+        opacity: 0;
+      }
+      100% {
         opacity: 1;
+      }
     }
-    .controls {
-        display: flex;
-        gap: .5rem;
-        padding: 0rem .2rem;
-        align-items: center;
-        margin-top: 0px;
-        padding-top: 0px;
-    }
-    .duration-container {
-        margin-top: -3px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: .25rem;
-        flex-grow: 1;
-        margin-left: 5px;
-        font-size: 12px;
-    }
-  
-    .controls button.wide-btn {
-      width: 35px;
-      font-size: 14px;
-    }
-  
-  
-  </style>
+</style>
