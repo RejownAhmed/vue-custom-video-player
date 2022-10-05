@@ -13,9 +13,9 @@ const mobileAndTabletCheck = ()=> {
   <div>
     <video-player
       v-if="!mobileAndTabletCheck()"
-      url="/video.mp4"
+      url="video/video.mp4"
       poster="thumb.jpg"
-      caption="/subtitles.vtt"
+      caption="video/subtitles.vtt"
     >
     </video-player>
     <videoPlayerMini
