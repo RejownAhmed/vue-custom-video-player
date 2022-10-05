@@ -559,6 +559,8 @@
     transform: translate(-50%, -50%);
   }
   .video-container {
+    -webkit-user-select: none;
+    user-select: none;
     font-family: Arial, Helvetica, sans-serif;
     position: relative;
     width: 90%;
